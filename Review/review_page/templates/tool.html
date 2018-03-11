@@ -1,0 +1,372 @@
+<head>
+<meta charset="utf-8" />
+<meta content="IE=edge" http-equiv="X-UA-Compatible" />
+<meta content="A front-end template that helps you build fast, modern mobile web apps." name="description" />
+<meta content="width=device-width, initial-scale=1.0, minimum-scale=1.0" name="viewport" />
+<meta content="width=device-width, initial-scale=1.0, minimum-scale=1.0" name="viewport" />
+<title></title>
+    <script src="https://code.getmdl.io/1.3.0/material.min.js"></script>
+    <script type='text/javascript' src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+<link crossorigin="anonymous" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css?family=Roboto:regular,bold,italic,thin,light,bolditalic,black,medium&amp;lang=en" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+<link href="https://code.getmdl.io/1.3.0/material.blue-pink.min.css" rel="stylesheet" />
+<link rel="stylesheet" type="text/css" href="/static/css/tool.css">
+
+<!--
+<script src="http://mturk.mit.edu/Navigation.js"></script>
+-->
+
+<script type="text/javascript">
+    var data_json = {{ data|tojson }};
+    var cur_anno_ind = 0;
+    var total_label = data_json.length;
+    var video;
+    var video_step1 = 0.5, video_step2 = 0.1;
+    var LEAST_LENGTH = 2;
+    function current_time_fn(caller_name) {
+        var char_time = parseFloat(video.currentTime).toFixed(2);
+        document.getElementById("time").innerHTML = char_time;
+        var dom = document.getElementById(caller_name);
+        if (dom)
+            dom.value = char_time;
+    }
+
+    function time_travel(delta_t) {
+        video.currentTime = video.currentTime + delta_t;
+        current_time_fn('ignore_me');
+    }
+
+    function keycontrol(e) {
+        // use shortcut 's' to pause the video
+        if (document.activeElement.className !== "form-control") {
+            // if (document.activeElement.getAttribute('type') != "text") {
+            switch (e.keyCode) {
+                case 70: // f
+					current_time_fn('time_');
+                    break;
+                case 32: // space
+					if(e.target === document.body || e.target === video){
+						e.preventDefault();
+						if (video.paused) {
+							video.play();
+						}
+						else {
+							video.pause();
+							current_time_fn('ignore_me');
+						}
+					}
+                    break;
+                case 37: // left
+					if(e.target === document.body || e.target === video){
+						e.preventDefault();
+						if (e.ctrlKey || e.metaKey) {
+							time_travel(-video_step2);
+						}
+						else {
+							time_travel(-video_step1);
+						}
+					}
+                    break;
+                case 39:// right
+					if(e.target === document.body || e.target === video){
+						e.preventDefault();
+						if (e.ctrlKey || e.metaKey) {
+							time_travel(video_step2);
+						}
+						else {
+							time_travel(video_step1);
+						}
+					}
+                    break;
+                case 38: // up
+                    break;
+                case 40: // down
+                    break;
+                case 83: // s
+                    current_time_fn('start_time');
+                    break;
+                case 84: // t
+                    current_time_fn('stop_time');
+                    break;
+                case 74: // j
+                    //current_time_fn('info_time');
+                    break;
+                case 75: // k
+                    //current_time_fn('score_time');
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+
+    function save_all(save_ind) {
+        var entry = [];
+        entry.push(Number(document.getElementById('time_').value));
+        if(document.getElementById('flg_').checked){
+            entry.push(1);
+        }
+        else{
+            entry.push(0);
+        }
+        if (save_ind === total_label) {
+            console.log('It will be saved as an new entry!');
+            data_json.push(entry);
+            total_label = total_label + 1;
+            cur_anno_ind = total_label - 1;
+            show_label();
+            review_label(cur_anno_ind)
+        }
+        else {
+            data_json[save_ind] = entry;
+            show_label();
+            review_label(cur_anno_ind)
+        }
+    }
+
+    function show_label() {
+        // clear
+        var review_btn = document.getElementById('review_btns');
+        while (review_btn.firstChild) {
+            review_btn.removeChild(review_btn.firstChild);
+        }
+
+        //alert('It will be saved as an new entry!');
+        for (var t_anno_ind = 0; t_anno_ind < total_label; t_anno_ind++) {
+{#            var t_anno_ind_str = t_anno_ind.toString();#}
+            var t_anno_ind_str = String("000" + t_anno_ind).slice(-3);
+            var btn = document.createElement("BUTTON");
+            btn.id = 'label_id_' + t_anno_ind_str;
+            btn.name = 'label_id_' + t_anno_ind_str;
+            btn.id_num = t_anno_ind.toString();
+            btn.onclick = function () {
+                var anno_num = Number(this.id_num);
+                review_label(anno_num);
+                set_focus_to_video();
+            };
+            btn.innerHTML = 'annot_' + t_anno_ind_str;
+			btn.classList.add("mdl-button");
+			btn.classList.add("mdl-js-button");
+			btn.classList.add("mdl-button--raised");
+			btn.classList.add("mdl-js-ripple-effect");
+			//mdl-button--colored
+            review_btn.appendChild(btn);
+        }
+
+    }
+
+    function set_time(caller_name) {
+        var tt = document.getElementById(caller_name).value;
+        if (video.played) {
+            video.pause();
+        }
+        video.currentTime = Number(tt);
+    }
+
+    function set_focus_to_video() {
+        document.getElementById("the_video").focus();
+    }
+
+    function delete_entry() {
+        data_json.splice(cur_anno_ind, 1);
+        total_label = total_label - 1;
+        if (cur_anno_ind >= total_label) {
+            cur_anno_ind = total_label;
+        }
+    }
+
+    function review_label(review_anno_ind) {
+        if (review_anno_ind === undefined)
+            cur_anno_ind = 0;
+        else
+            cur_anno_ind = review_anno_ind;
+        if (cur_anno_ind < 0)
+            cur_anno_ind = 0;
+
+        if (cur_anno_ind >= total_label)
+            cur_anno_ind = total_label - 1;
+
+        if (cur_anno_ind > -1) {
+            document.getElementById('stat').innerHTML = 'Current clip is annot_' + (cur_anno_ind).toString() + ', ' + (total_label).toString() + ' in total.';
+        }
+        else {
+            document.getElementById('stat').innerHTML = "{{ video_id }}";
+        }
+
+        var entry = data_json[cur_anno_ind];
+        document.getElementById('time_').value = entry[0];
+        if(entry[1] === 0){
+            document.getElementById('flg_').checked = false;
+        }
+        else{
+            document.getElementById('flg_').checked = true;
+        }
+
+        set_time('time_');
+
+    }
+
+    // register the handler
+
+    function save_action() {
+        save_all(total_label);
+        set_focus_to_video();
+        //alert('It will be saved as an new entry!');
+    }
+
+    function change_action() {
+        save_all(cur_anno_ind);
+        set_focus_to_video();
+    }
+
+
+    function delete_action() {
+        if (total_label > 0) {
+            delete_entry();
+            set_focus_to_video();
+            show_label();
+            review_label(cur_anno_ind);
+            if (total_label < LEAST_LENGTH) {
+                document.getElementById('submitButton').disabled = true;
+            }
+        }
+    }
+
+</script>
+</head>
+
+<div class="wrapper">
+<div class="demo-layout mdl-layout mdl-layout--fixed-header mdl-js-layout mdl-color--grey-100">
+<header class="demo-header mdl-layout__header mdl-layout__header--scroll mdl-color--grey-100 mdl-color-text--grey-800">
+<div class="mdl-layout__header-row"><span class="mdl-layout-title">A Naive! Tool</span>
+
+<div class="mdl-layout-spacer">&nbsp;</div>
+
+<div class="mdl-textfield mdl-js-textfield mdl-textfield--expandable"><label class="mdl-button mdl-js-button mdl-button--icon" for="search"><i class="material-icons">search</i> </label>
+
+<div class="mdl-textfield__expandable-holder"><input class="mdl-textfield__input" id="search" type="text" /> <label class="mdl-textfield__label" for="search">Enter your query...</label></div>
+</div>
+</div>
+</header>
+
+<div class="demo-ribbon">&nbsp;</div>
+<main class="demo-main mdl-layout__content">
+<div class="mdl-grid">
+
+<div class="mdl-cell--2-col-desktop">
+</div>
+
+<div class="mdl-cell mdl-color--white mdl-cell--8-col-desktop mdl-shadow--4dp">
+<div>
+<center>
+<h5 id="stat">video id: {{ video_id }}</h5>
+</center>
+</div>
+
+<div>
+<center class="embed-responsive embed-responsive-16by9">
+<video controls="" id="the_video" muted=""><source src={{ video_source }} /></video>
+</center>
+</div>
+
+<div class="mdl-color-text--black-600">&nbsp;
+<center><a href="#">Video Controls<span> <kbd class="keyboard-key nowrap">Space</kbd>:&nbsp;stop/play&nbsp;video<br />
+<kbd class="keyboard-key nowrap">&larr;</kbd>/<kbd class="keyboard-key nowrap">&rarr;</kbd>:&nbsp;forward/backward&nbsp;video&nbsp;by&nbsp;0.5s<br />
+<kbd class="keyboard-key nowrap">Ctrl</kbd>/<kbd class="keyboard-key nowrap">⌘</kbd>&nbsp;+&nbsp;<kbd class="keyboard-key nowrap">&larr;</kbd>/<kbd class="keyboard-key nowrap">&rarr;</kbd>:&nbsp;forward/backward&nbsp;by&nbsp;0.1s </span></a></center>
+
+<center>
+<h6 style="display: inline;">Current Time:&nbsp;</h6>
+
+<h6 id="time" style="display: inline;">0</h6>
+
+<h6 style="display: inline;">/</h6>
+
+<h6 id="duration" style="display: inline;">0</h6>
+</center>
+</div>
+
+<div class="row demo-inst">
+<div class="col-lg-3"><label class="form-label" for="time_">Time:</label> <input class="form-control" id="time_" type="number" value="" /></div>
+
+<div class="col-lg-3"><label class="form-label" for="flg_">Score board</label> <input class="form-control" id="flg_" type="checkbox" /></div>
+</div>
+<div class="row demo-inst">
+<div class="col-lg-12">
+    <button class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--colored"
+            id="Next" onclick="save_all(cur_anno_ind);review_label(cur_anno_ind+1);set_focus_to_video();">Next
+    </button>
+    <button class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--colored"
+            id="Prev" onclick="save_all(cur_anno_ind);review_label(cur_anno_ind-1);set_focus_to_video();">Prev
+    </button>
+    <button class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect"
+            id="delete" onclick="delete_action();">Delete
+    </button>
+    <button class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect"
+            id="Save" onclick="save_action();">Append
+    </button>
+    <button class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--accent"
+            id="submit_data">Submit
+    </button>
+</div>
+</div>
+</div>
+
+<div class="mdl-cell--12-col-desktop demo-inst" id="review_btns">
+
+</div>
+
+
+</div>
+</main>
+
+<footer class="demo-footer mdl-mini-footer">
+<div class="mdl-mini-footer--left-section">
+<ul class="mdl-mini-footer--link-list">
+	<li><a href="#">Diving Info Labeling</a></li>
+</ul>
+</div>
+</footer>
+<script language='Javascript'>
+    video = document.getElementById("the_video");
+    //video.pause();
+    document.addEventListener('keydown', function (e) {
+        keycontrol(e);
+    }, false);
+
+    var tt = setInterval(function(){
+      if (video.readyState > 0) {
+        document.getElementById('duration').innerHTML = parseFloat(video.duration).toFixed(2);;
+        clearInterval(tt);
+      }
+    },500);
+
+    var ttt = setInterval(function(){
+      if (video.readyState > 0) {
+        current_time_fn('ignore_me');
+      }
+    },50);
+
+    $('#submit_data').click(function () {
+        console.log('submit button hit!');
+        var data = data_json; // data
+        var url_ = "{{ "/load_ajax?id=" + video_id }}";
+        url_ = url_ + "&flag=1";
+        $.ajax({
+            type: "POST",
+            url: url_,
+            data: JSON.stringify(data),
+            contentType: 'application/json;charset=UTF-8',
+            success: function (result) {
+                console.log('upload done');
+                show_label();
+            }
+        });
+{#        $("#posted").fadeIn(300).delay(100).fadeOut(300);#}
+    });
+
+    show_label();
+    review_label(0);
+</script>
+</div>
+</div>

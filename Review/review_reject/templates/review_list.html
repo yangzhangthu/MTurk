@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+	<meta content="IE=edge" http-equiv="X-UA-Compatible"/>
+	<meta content="A front-end template that helps you build fast, modern mobile web apps." name="description"/>
+	<meta content="width=device-width, initial-scale=1.0, minimum-scale=1.0" name="viewport"/>
+	<link href="https://fonts.googleapis.com/css?family=Roboto:regular,bold,italic,thin,light,bolditalic,black,medium&amp;lang=en"
+		  rel="stylesheet"/>
+	<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
+	<link href="https://code.getmdl.io/1.3.0/material.blue-pink.min.css" rel="stylesheet"/>
+    <title>List for review</title>
+    <script type='text/javascript' src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+	<style type="text/css">.demo-header .mdl-layout__header-row {
+		padding-left: 40px;
+		background-color: #2196F3;//#3F51B5;
+		color: #FFFFFF;
+	}
+
+	.demo-ribbon {
+		  width: 100%;
+		  height: 40vh;
+		  background-color: #64B5F6;//#3F51B5;
+		  -webkit-flex-shrink: 0;
+			  -ms-flex-negative: 0;
+				  flex-shrink: 0;
+	}
+
+	.demo-main {
+	  margin-top: -35vh;
+	  -webkit-flex-shrink: 0;
+		  -ms-flex-negative: 0;
+			  flex-shrink: 0;
+	}
+		
+		.demo-container {
+		  max-width: 1600px;
+		  width: calc(100% - 16px);
+		  margin: 0 auto;
+		}
+
+		.demo-content {
+		  border-radius: 2px;
+		  padding: 60px 48px;
+		  margin-bottom: 80px;
+		}
+		
+	.demo-footer {
+		padding-left: 40px;
+	}
+
+	.demo-footer .mdl-mini-footer--link-list a {
+		font-size: 13px;
+	}
+
+	#view-source {
+		position: fixed;
+		display: block;
+		right: 0;
+		bottom: 0;
+		margin-right: 40px;
+		margin-bottom: 40px;
+		z-index: 900;
+	}
+	</style>
+    <script>
+    var data = {{ entry_list|tojson }};
+    var video_id = "{{ f_id }}";
+    var lng = data.length;
+    var approve = [];
+    function build_table() {
+        for (var i = 0; i < lng; i++) {
+            var temp = data[i]['Input.vid_url'].split('/');
+            var temp2 = temp[temp.length-1].split('.')[0];
+            var temp3 = data[i]['AssignmentId'];
+            var s = `<tr><td class="mdl-data-table__cell--non-numeric"><a href="/tool?id=${temp3}&fid=${video_id}" target="_blank">${temp2}</a></td>
+    <td class="mdl-data-table__cell--non-numeric">${data[i]['AssignmentId']}</td>
+    <td class="mdl-data-table__cell--non-numeric">${data[i]['WorkerId']}</td>
+    <td class="mdl-data-table__cell--non-numeric">${data[i]['WorkTimeInSeconds']}</td>
+    <td>${data[i]['LifetimeApprovalRate']}</td>
+    <td class="mdl-data-table__cell--non-numeric"><span class="mdl-list__item-secondary-action">
+      <label class="mdl-checkbox mdl-js-checkbox mdl-js-ripple-effect" for="list-checkbox-${i}">
+        <input type="checkbox" id="list-checkbox-${i}" class="mdl-checkbox__input" />
+      </label></span></td></tr>`;
+            var d = $.parseHTML(s)[0];
+            document.getElementById("father").appendChild(d);
+            if(data[i]['Approve'] == 'x'){
+                approve.push(true);
+                document.getElementById("list-checkbox-"+i.toString()).checked = true;
+            }
+            else{
+                approve.push(false);
+            }
+        }
+        console.log('table done!');
+    }
+
+    function save(){
+        var appr = [];
+        for(var i = 0; i<lng; i++){
+            var tmp = document.getElementById("list-checkbox-"+i.toString()).checked;
+            if(tmp !== approve[i]){
+                appr.push(i);
+            }
+        }
+        console.log(appr);
+        var url_ = "{{ "/load_ajax?id=" + f_id }}";
+        url_ = url_ + "&flag=1";
+        $.ajax({
+            type: "POST",
+            url: url_,
+            data: JSON.stringify(appr),
+            contentType: 'application/json;charset=UTF-8',
+            success: function (result) {
+                console.log('upload done');
+            }
+        });
+        window.location.href = "/";
+    }
+
+    </script>
+
+</head>
+<body>
+<div class="demo-layout mdl-layout mdl-layout--fixed-header mdl-js-layout mdl-color--grey-100">
+    <header class="demo-header mdl-layout__header mdl-layout__header--scroll mdl-color--grey-100 mdl-color-text--grey-800">
+        <div class="mdl-layout__header-row"><span class="mdl-layout-title">A Naive! Tool</span>
+            <div class="mdl-layout-spacer">&nbsp;</div>
+
+            <div class="mdl-textfield mdl-js-textfield mdl-textfield--expandable"><label
+                    class="mdl-button mdl-js-button mdl-button--icon" for="search"><i class="material-icons">search</i>
+            </label>
+
+                <div class="mdl-textfield__expandable-holder"><input class="mdl-textfield__input" id="search"
+                                                                     type="text"/> <label class="mdl-textfield__label"
+                                                                                          for="search">Enter your
+                    query...</label></div>
+            </div>
+        </div>
+    </header>
+	<div class="demo-ribbon"></div>
+	<main class="demo-main mdl-layout__content">
+        <div class="demo-container mdl-grid">
+          <div class="mdl-cell mdl-cell--1-col mdl-cell--hide-tablet mdl-cell--hide-phone"></div>
+          <table class="mdl-data-table mdl-js-data-table mdl-shadow--2dp">
+              <thead>
+                <tr>
+                  <th class="mdl-data-table__cell--non-numeric">VideoName</th>
+                  <th class="mdl-data-table__cell--non-numeric">AssignmentID</th>
+                  <th class="mdl-data-table__cell--non-numeric">WorkerID</th>
+                  <th>WorkTime(s)</th>
+                  <th class="mdl-data-table__cell--non-numeric">ApprovalRate</th>
+                  <th class="mdl-data-table__cell--non-numeric">Approve</th>
+                </tr>
+              </thead>
+              <tbody id="father">
+              </tbody>
+          </table>
+
+        </div>
+        <script>build_table();</script>
+      </main>
+		<footer class="demo-footer mdl-mini-footer">
+          <div class="mdl-mini-footer--left-section">
+            <ul class="mdl-mini-footer--link-list">
+              <li><a href="#">Statistical Visual Computing Lab</a></li>
+              <li><a href="#">UC San Diego</a></li>
+            </ul>
+          </div>
+        </footer>
+		<script src="https://code.getmdl.io/1.3.0/material.min.js"></script>
+    <button class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-color--accent mdl-color-text--accent-contrast" id="view-source" onclick="save();">Save</button></div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,573 @@
+<meta charset="utf-8"/>
+<meta content="IE=edge" http-equiv="X-UA-Compatible"/>
+<meta content="A front-end template that helps you build fast, modern mobile web apps." name="description"/>
+<meta content="width=device-width, initial-scale=1.0, minimum-scale=1.0" name="viewport"/>
+<title>Naive</title>
+<link crossorigin="anonymous" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+      integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css?family=Roboto:regular,bold,italic,thin,light,bolditalic,black,medium&amp;lang=en"
+      rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
+<link href="https://code.getmdl.io/1.3.0/material.blue-pink.min.css" rel="stylesheet"/>
+<style type="text/css">.demo-header .mdl-layout__header-row {
+    padding-left: 40px;
+    background-color: #2196F3;//#3F51B5;
+    color: #FFFFFF;
+}
+
+.demo-ribbon {
+	  width: 100%;
+	  height: 40vh;
+	  background-color: #64B5F6;//#3F51B5;
+	  -webkit-flex-shrink: 0;
+		  -ms-flex-negative: 0;
+			  flex-shrink: 0;
+	}
+
+	.demo-board {
+		border-radius: 2px;
+		padding: 20px 15px;
+		background-color: #FFFFFF;
+	}
+	
+	.demo-main {
+	  margin-top: -35vh;
+	  -webkit-flex-shrink: 0;
+		  -ms-flex-negative: 0;
+			  flex-shrink: 0;
+	}
+	
+.demo-footer {
+    padding-left: 40px;
+}
+
+.demo-footer .mdl-mini-footer--link-list a {
+    font-size: 13px;
+}
+
+#view-source {
+    position: fixed;
+    display: block;
+    right: 0;
+    bottom: 0;
+    margin-right: 40px;
+    margin-bottom: 40px;
+    z-index: 900;
+}
+
+h6 {
+    display: inline;
+}
+</style>
+<script type="text/javascript">
+    var data_json = {{ data|tojson }};
+    var cur_anno_ind = 0;
+    var total_label = data_json.length;
+    var video;
+    var video_step1 = 0.5, video_step2 = 0.1;
+    var LEAST_LENGTH = 1;
+    function current_time_fn(caller_name) {
+        var char_time = parseFloat(video.currentTime).toFixed(2);
+        document.getElementById("time").innerHTML = char_time;
+        var dom = document.getElementById(caller_name);
+        if (dom)
+            dom.value = char_time;
+    }
+
+    function time_travel(delta_t) {
+        video.currentTime = video.currentTime + delta_t;
+        current_time_fn('')
+    }
+
+    function keycontrol(e) {
+        // use shortcut 's' to pause the video
+        if (document.activeElement.className != "form-control") {
+            // if (document.activeElement.getAttribute('type') != "text") {
+            switch (e.keyCode) {
+                case 70: // f
+                    break;
+                case 32: // space
+                    if (video.paused) {
+                        video.play();
+                    }
+                    else {
+                        video.pause();
+                    }
+                    break;
+                case 37: // left
+                    if (e.ctrlKey || e.metaKey) {
+                        time_travel(-video_step2);
+                    }
+                    else {
+                        time_travel(-video_step1);
+                    }
+                    break;
+                case 39:// right
+                    if (e.ctrlKey || e.metaKey) {
+                        time_travel(video_step2);
+                    }
+                    else {
+                        time_travel(video_step1);
+                    }
+                    break;
+                case 38: // up
+                    break;
+                case 40: // down
+                    break;
+                case 83: // s
+                    current_time_fn('start_time');
+                    break;
+                case 84: // t
+                    current_time_fn('stop_time');
+                    break;
+                case 74: // j
+                    //current_time_fn('info_time');
+                    break;
+                case 75: // k
+                    current_time_fn('score_time');
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+
+    function save_all(save_ind) {
+        var entry = {
+            action1: "", action2: "", action3: "", action4: "", athelete_name: "",
+            cam_view: "", position: "", exe_score: 0, game_type: "",
+            info_time: -1, score_time: -1, sex: "", slow_motion: false, start_time: -1,
+            stop_time: -1, type: "", dive: "", difficulty: 0.0
+        };
+        for (var key in entry) {
+            var dom = document.getElementById(key);
+            //console.log(dom);
+            if (dom != null)
+                switch (dom.type) {
+                    case "text":
+                        entry[key] = dom.value;
+                        break;
+                    case "number":
+                        entry[key] = Number(dom.value);
+                        break;
+                    case "select-one":
+                        entry[key] = dom[dom.selectedIndex].value;
+                        break;
+                    case "checkbox":
+                        entry[key] = dom.checked;
+                        break;
+                    default:
+                        alert('attr type not implemented: ' + dom.type);
+                        break;
+                }
+        }
+        if (entry["dive"] != "") {
+            var x = entry["dive"].charAt(4).toUpperCase().charCodeAt(0);
+            if (isNaN(x)) {
+                x = entry["dive"].charAt(3).toUpperCase().charCodeAt(0);
+            }
+            if (x > 64 && x < 69) {
+                switch (x) {
+                    case 65:
+                        entry["position"] = "STR";
+                        break;
+                    case 66:
+                        entry["position"] = "PIKE";
+                        break;
+                    case 67:
+                        entry["position"] = "TUCK";
+                        break;
+                    case 68:
+                        entry["position"] = "FREE";
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+        if (save_ind == total_label) {
+            console.log('It will be saved as an new entry!');
+            data_json.push(entry);
+            total_label = total_label + 1;
+            cur_anno_ind = total_label - 1;
+            review_label(cur_anno_ind)
+        }
+        else {
+            data_json[save_ind] = entry;
+            review_label(cur_anno_ind)
+        }
+    }
+
+    function show_label() {
+        // clear
+        var review_btn = document.getElementById('review_btns');
+        while (review_btn.firstChild) {
+            review_btn.removeChild(review_btn.firstChild);
+        }
+
+        //alert('It will be saved as an new entry!');
+        for (var t_anno_ind = 0; t_anno_ind < total_label; t_anno_ind++) {
+            var t_anno_ind_str = t_anno_ind.toString();
+            var btn = document.createElement("BUTTON");
+            btn.id = 'label_id_' + t_anno_ind_str;
+            btn.name = 'label_id_' + t_anno_ind_str;
+            btn.id_num = t_anno_ind.toString();
+            btn.onclick = function () {
+                var anno_num = Number(this.id_num);
+                review_label(anno_num);
+                set_focus_to_video();
+            };
+            btn.innerHTML = 'annot_' + t_anno_ind_str;
+            btn.classList.add("mdl-button");
+			btn.classList.add("mdl-js-button");
+			btn.classList.add("mdl-button--raised");
+			btn.classList.add("mdl-js-ripple-effect");
+            review_btn.appendChild(btn);
+        }
+
+    }
+
+    function set_time(caller_name) {
+        var tt = document.getElementById(caller_name).value;
+        if (video.played) {
+            video.pause();
+        }
+        video.currentTime = Number(tt);
+    }
+
+    function set_focus_to_video() {
+        document.getElementById("the_video").focus();
+    }
+
+    function delete_entry() {
+        data_json.splice(cur_anno_ind, 1);
+        total_label = total_label - 1;
+        if (cur_anno_ind >= total_label) {
+            cur_anno_ind = total_label;
+        }
+    }
+
+    function review_label(review_anno_ind) {
+        if (review_anno_ind == undefined)
+            cur_anno_ind = 0;
+        else
+            cur_anno_ind = review_anno_ind;
+        if (cur_anno_ind < 0)
+            cur_anno_ind = 0;
+
+        if (cur_anno_ind >= total_label)
+            cur_anno_ind = total_label - 1;
+
+        if (cur_anno_ind > -1) {
+            document.getElementById('stat').innerHTML = 'Current clip is annot_' + (cur_anno_ind).toString() + ', ' + (total_label).toString() + ' in total.';
+        }
+        else {
+            document.getElementById('stat').innerHTML = 'No clips labelled!';
+        }
+
+        var entry = data_json[cur_anno_ind];
+        for (var key in entry) {
+            var dom = document.getElementById(key);
+            if (dom != null)
+                switch (dom.type) {
+                    case "text":
+                        dom.value = entry[key];
+                        break;
+                    case "number":
+                        dom.value = entry[key];
+                        break;
+                    case "select-one":
+                        dom.value = entry[key];
+                        break;
+                    case "checkbox":
+                        dom.checked = entry[key];
+                        break;
+                    default:
+                        alert('attr type not implemented: ' + dom.type);
+                        break;
+                }
+            else {
+                console.log('attr name not found in html: ' + key)
+            }
+
+        }
+
+        if (entry) {
+            var video = document.getElementById("the_video");
+            var pausing_function = function () {
+                if (this.currentTime >= entry['stop_time']) {
+                    this.pause();
+                    // remove the event listener after you paused the playback
+                    this.ontimeupdate = null;
+                }
+            };
+            video.currentTime = entry['start_time'];
+            video.play();
+            video.ontimeupdate = pausing_function;
+        }
+
+
+    }
+
+
+    function submit_action() {
+        var field = document.getElementById('answers');
+        field.value = JSON.stringify(data_json);
+        //$("#posted").fadeIn(300).delay(100).fadeOut(300);
+    }
+
+    // register the handler
+
+    function save_action() {
+        save_all(total_label);
+        set_focus_to_video();
+        //alert('It will be saved as an new entry!');
+        show_label();
+        if (total_label >= LEAST_LENGTH) {
+            assignmentID = turkGetParam('assignmentId', "");
+            if (assignmentID != "ASSIGNMENT_ID_NOT_AVAILABLE") {
+                document.getElementById('submitButton').disabled = false;
+            }
+        }
+    }
+
+    function change_action() {
+        save_all(cur_anno_ind);
+        set_focus_to_video();
+    }
+
+    function info_action() {
+        set_time('info_time');
+        set_focus_to_video();
+    }
+
+    function score_action() {
+        set_time('score_time');
+        set_focus_to_video();
+    }
+
+    function replay_action() {
+        review_label(cur_anno_ind);
+        set_focus_to_video();
+    }
+
+    function delete_action() {
+        if (total_label > 0) {
+            delete_entry();
+            set_focus_to_video();
+            show_label();
+            review_label(cur_anno_ind);
+            if (total_label < LEAST_LENGTH) {
+                document.getElementById('submitButton').disabled = true;
+            }
+        }
+    }
+
+    function set_step() {
+        video_step1 = Number(document.getElementById('video_step1').value);
+        video_step2 = Number(document.getElementById('video_step2').value);
+        console.log(video_step1);
+        set_focus_to_video();
+    }
+</script>
+<div class="demo-layout mdl-layout mdl-layout--fixed-header mdl-js-layout mdl-color--grey-100">
+    <header class="demo-header mdl-layout__header mdl-layout__header--scroll mdl-color--grey-100 mdl-color-text--grey-800">
+        <div class="mdl-layout__header-row"><span class="mdl-layout-title">A Naive! Tool</span>
+            <div class="mdl-layout-spacer">&nbsp;</div>
+
+            <div class="mdl-textfield mdl-js-textfield mdl-textfield--expandable"><label
+                    class="mdl-button mdl-js-button mdl-button--icon" for="search"><i class="material-icons">search</i>
+            </label>
+
+                <div class="mdl-textfield__expandable-holder"><input class="mdl-textfield__input" id="search"
+                                                                     type="text"/> <label class="mdl-textfield__label"
+                                                                                          for="search">Enter your
+                    query...</label></div>
+            </div>
+        </div>
+    </header>
+	<div class="demo-ribbon"></div>
+    <main class="demo-main mdl-layout__content">
+        <div class="mdl-grid">
+            <div class="mdl-card mdl-cell mdl-cell--6-col-desktop">
+                <div>
+                    <center>
+                        <h5 id="stat">It&#39;s a test!</h5>
+                    </center>
+                </div>
+
+                <div>
+                    <center>
+                        <video controls="" height="350" id="the_video" width="560">
+                            <source src="{{ vid_url }}"/>
+                        </video>
+                    </center>
+                </div>
+
+                <div class="mdl-color-text--black-600">
+                    <center>
+                        <h6>Current Time:&nbsp;</h6>
+
+                        <h6 id="time">0</h6>
+                    </center>
+                </div>
+            </div>
+            <script language='Javascript'>
+                video = document.getElementById("the_video");
+                video.pause();
+                video.muted = true;
+                document.addEventListener('keydown', function (e) {
+                    keycontrol(e);
+                }, false);
+            </script>
+
+            <div class="mdl-cell demo-board mdl-cell--6-col-desktop">
+                <div class="row">
+                    <div class="col-lg-3"><label class="form-label" for="athelete_name">Athelete name:</label> <input
+                            class="form-control" id="athelete_name" placeholder="name of the athelete" type="text"
+                            value=""/></div>
+
+                    <div class="col-lg-3"><label class="form-label" for="dive">Dive:</label> <input class="form-control"
+                                                                                                    id="dive"
+                                                                                                    maxlength="5/"
+                                                                                                    placeholder="e.g 107B"
+                                                                                                    type="text"
+                                                                                                    value=""/></div>
+
+                    <div class="col-lg-3"><label class="form-label" for="difficulty">Difficulty:</label> <input
+                            class="form-control" id="difficulty" placeholder="e.g 3.0" type="number" value=""/></div>
+                </div>
+                &nbsp;
+
+                <div class="row">
+                    <div class="col-lg-2"><label class="form-label">Action:</label></div>
+                </div>
+
+                <div class="row">
+                    <div class="col-lg-2"><select class="form-control" id="action1">
+                        <option value="Forward">Forward</option>
+                        <option value="Back">Back</option>
+                        <option value="Reverse">Reverse</option>
+                        <option value="Inward">Inward</option>
+                    </select></div>
+
+                    <div class="col-lg-2"><select class="form-control" id="action2">
+                        <option value="Dive">Dive</option>
+                        <option value="1som">1som</option>
+                        <option value="15som">1.5som</option>
+                        <option value="2som">2som</option>
+                        <option value="25som">2.5som</option>
+                        <option value="3som">3som</option>
+                        <option value="35som">3.5som</option>
+                        <option value="4som">4som</option>
+                        <option value="45som">4.5som</option>
+                        <option value="5som">5som</option>
+                        <option value="55som">5.5som</option>
+                        <option value="flysom">flysom</option>
+                        <option value="fly15som">fly1.5som</option>
+                        <option value="fly2som">fly2som</option>
+                        <option value="fly25som">fly2.5som</option>
+                    </select></div>
+
+                    <div class="col-lg-2"><select class="form-control" id="action3">
+                        <option value="NoTwis">NoTwis</option>
+                        <option value="05Twis">0.5Twis</option>
+                        <option value="1Twis">1Twis</option>
+                        <option value="15Twis">1.5Twis</option>
+                        <option value="2Twis">2Twis</option>
+                        <option value="25Twis">2.5Twis</option>
+                        <option value="3Twis">3Twis</option>
+                        <option value="35Twis">3.5Twis</option>
+                        <option value="4Twis">4Twis</option>
+                        <option value="45Twis">4.5Twis</option>
+                    </select></div>
+
+                    <div class="col-lg-2"><select class="form-control" id="action4">
+                        <option value="NoArms">NoArms</option>
+                        <option value="Arms">Armstand</option>
+                    </select></div>
+
+                    <div class="col-lg-2"><select class="form-control" id="position">
+                        <option value="STR">STR</option>
+                        <option value="PIKE">PIKE</option>
+                        <option value="TUCK">TUCK</option>
+                        <option value="FREE">FREE</option>
+                    </select></div>
+                </div>
+                &nbsp;
+
+                <div class="row">
+                    <div class="col-lg-2"><label class="form-label" for="cam_view">CameraView:</label> <select
+                            class="form-control" id="cam_view">
+                        <option value="side">side</option>
+                        <option value="front">front</option>
+                        <option value="back">back</option>
+                        <option value="top">top</option>
+                    </select></div>
+
+                    <div class="col-lg-2"><label class="form-label" for="slow_motion">SlowMotion:</label> <input
+                            class="form-control" id="slow_motion" type="checkbox" value="false"/></div>
+                </div>
+                &nbsp;
+
+                <div class="row">
+                    <div class="col-lg-3"><label class="form-label" for="start_time">Start Time(s):</label> <input
+                            class="form-control" id="start_time" maxlength="10" type="number" value=""/></div>
+
+                    <div class="col-lg-3"><label class="form-label" for="stop_time">Stop Time(t):</label> <input
+                            class="form-control" id="stop_time" maxlength="10" size="14" type="number" value=""/> <input
+                            class="form-control" id="replay" onclick="replay_action();" type="button" value="replay"/>
+                    </div>
+
+                    <div class="col-lg-3"><label class="form-label" for="score_time">Score Time(k):</label> <input
+                            class="form-control" id="score_time" maxlength="10" size="15" type="number" value=""/>
+                        <input class="form-control" id="score" onclick="score_action();" type="button" value="Go"/>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-lg-3"><label class="form-label" for="exe_score">Exe score:</label> <input
+                            class="form-control" id="exe_score" placeholder="executive score" type="text" value=""/>
+                    </div>
+                </div>
+                &nbsp;
+
+                <div>
+                    <div class="col-lg-12">
+                        <button class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--colored"
+                                id="Save" onclick="save_action();">Append
+                        </button>
+                        <button class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--colored"
+                                id="change" onclick="change_action();">Change
+                        </button>
+                        <button class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--colored"
+                                id="delete" onclick="delete_action();">Delete
+                        </button>
+
+                        <button class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--accent"
+                                id="submitButton" onclick="submit_action();">SUBMIT
+                        </button>
+
+
+                    </div>
+                </div>
+                <script language='Javascript'>document.getElementById('submitButton').disabled = true;</script>
+            </div>
+
+            <div class="mdl-cell mdl-cell--12-col-desktop">
+                <div class="col-lg-12" id="review_btns">&nbsp;</div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="demo-footer mdl-mini-footer">
+        <div class="mdl-mini-footer--left-section">
+            <ul class="mdl-mini-footer--link-list">
+                <li><a href="#"></a></li>
+                <li><a href="#"></a></li>
+            </ul>
+        </div>
+    </footer>
+</div>
+<script src="https://code.getmdl.io/1.3.0/material.min.js"></script>
+<script>show_label();</script>

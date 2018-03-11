@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>index</title>
+    <link rel="stylesheet" type="text/css" href="/static/css/tool.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+          integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.1/jquery.min.js"></script>
+</head>
+<body>
+<div class="container-fluid">
+    <div class="col-lg-12">
+        <h1>number of videos: {{ entry_list|length }}</h1>
+    </div>
+    <div class="col-lg-12">
+        <div class="row">
+            <div class="col-lg-3">
+                <form action="/" method= "POST">
+                    <label class="form-label" for="filter_tag">filter tag:</label>
+                    <input class="form-control" type="text" id="filter_tag"
+                           placeholder="" value="{{ filter_tag_str }}" name="filter_tag" readonly>
+
+                    <input class="form-control" type="submit" value="filter tag">
+                </form>
+            </div>
+        </div>
+    </div>
+    {% for entry in entry_list %}
+        <li>
+            <a href="/tool?id={{ entry['video_id'] }}">{{ entry['video_id'] }}</a> ({{ entry['n_annotation'] }})
+        </li>
+    {% endfor %}
+</div>
+</body>
+</html>

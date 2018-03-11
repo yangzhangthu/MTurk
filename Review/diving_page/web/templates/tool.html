@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" type="text/css" href="/static/css/tool.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+          integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.1/jquery.min.js"></script>
+    <script>
+        var data_json = {{ data|tojson }};
+        var cur_anno_ind = 0;
+        var total_label = data_json.length;
+        var video;
+        var video_step1=1.0, video_step2=0.1;
+    </script>
+
+    <script src="/static/js/tool.js"></script>
+    {# jinja template interface   #}
+    <script>
+        function init() {
+            video = document.getElementById("the_video");
+            video.pause();
+            video.muted = true;
+            if (video.canPlayType) {
+                $('#submitdata').click(function () {
+
+                    var data = data_json; // data
+                    var url_ = "{{ "/load_ajax?id=" + video_id }}";
+                    url_ = url_ + "&flag=1";
+                    $.ajax({
+                        type: "POST",
+                        url: url_,
+                        data: JSON.stringify(data),
+                        contentType: 'application/json;charset=UTF-8',
+                        success: function (result) {
+                            console.log('upload done');
+                            show_label();
+                        }
+                    });
+                    $("#posted").fadeIn(300).delay(100).fadeOut(300);
+                });
+
+
+                show_label();
+
+                // register the handler
+                document.addEventListener('keydown', function (e) {
+                    keycontrol(e);
+                }, false);
+                document.getElementById("Save").addEventListener('click', function () {
+
+                    save_all(total_label);
+                    set_focus_to_video();
+                    show_label();
+                }, false);
+                document.getElementById("change").addEventListener('click', function () {
+                    save_all(cur_anno_ind);
+                    set_focus_to_video();
+                }, false);
+                document.getElementById("clear").addEventListener('click', function () {
+                    clear_time();
+                    set_focus_to_video();
+                }, false);
+                document.getElementById("info").addEventListener('click', function () {
+                    set_time('info_time');
+                    set_focus_to_video();
+                }, false);
+                document.getElementById("score").addEventListener('click', function () {
+                    set_time('score_time');
+                    set_focus_to_video();
+                }, false);
+                document.getElementById("replay").addEventListener('click', function () {
+                    review_label(cur_anno_ind);
+                    set_focus_to_video();
+                }, false);
+                document.getElementById("prev").addEventListener('click', function () {
+                    review_label(cur_anno_ind-1);
+                    set_focus_to_video();
+                }, false);
+                document.getElementById("next").addEventListener('click', function () {
+                    review_label(cur_anno_ind + 1);
+                    set_focus_to_video();
+                }, false);
+                document.getElementById("delete").addEventListener('click', function () {
+                    delete_entry();
+                    set_focus_to_video();
+                    show_label();
+                    review_label(cur_anno_ind);
+                }, false);
+            }
+
+        }
+
+    </script>
+</head>
+
+<body onload="init();review_label(0);">
+<div class="container-fluid wrapper">
+    <h1>A Naive! Tool</h1>
+    <h2>{{ title }}</h2>
+    <h2 id="stat">It's a test!</h2>
+
+    <div class="col-lg-12">
+        <div class="row">
+            <div class="col-sm-1">
+                <label class="form-label" for="video_step1">video step1(sec):</label>
+                <input class="form-control" type="number" id="video_step1"
+                       placeholder=1.0 value=1.0>
+            </div>
+
+            <div class="col-sm-1">
+                <label class="form-label" for="video_step2">video step2(sec):</label>
+                <input class="form-control" type="number" id="video_step2"
+                       placeholder=0.1 value=0.1>
+            </div>
+
+            <div class="col-sm-1">
+                <label class="form-label" for="set_step"></label>
+                <input class="form-control" type="submit" id="set_step" value="set_step"
+                       onclick='video_step1 = Number(document.getElementById("video_step1").value);
+                       video_step2 = Number(document.getElementById("video_step2").value);console.log(video_step1);'>
+            </div>
+        </div>
+
+    </div>
+    <div class="col-lg-12">
+        <div class="col-lg-6 tool_video">
+            <video id="the_video" width="640" height="400" controls>
+                <source src={{ video_source }}>
+            </video>
+        </div>
+
+        <div class='col-lg-6 sidebar' id="sidebar">
+            <div class="row">
+                <div class="col-lg-3">
+                    <label class="form-label" for="video_name">Video name:</label>
+                    <input class="form-control" type="text" id="video_name"
+                           placeholder="video name" value=""/>
+                </div>
+
+                <div class="col-lg-3">
+                    <label class="form-label" for="game_name">Competition name:</label>
+                    <input type="text" class="form-control" id="game_name" placeholder="competition name (game, year)"
+                           value=""/>
+                </div>
+
+                <div class="col-lg-3">
+                    <label class="form-label" for="game_type"> Game type:</label>
+                    <select class="form-control" id="game_type">
+                        <option value="1s">1m springboard</option>
+                        <option value="3s">3m springboard</option>
+                        <option value="10p">10m platform</option>
+                        <option value="75p">7.5m platform</option>
+                        <option value="5p">5m platform</option>
+                    </select>
+                </div>
+
+                <div class="col-lg-3">
+                    <label class="form-label" for="sex">Sex:</label>
+                    <select class="form-control" id="sex">
+                        <option value="M">Men's</option>
+                        <option value="W">Women's</option>
+                        <option value="Mixed">Mixed</option>
+                    </select>
+                </div>
+
+                <div class="col-lg-3">
+                    <label class="form-label" for="type">Type:</label>
+                    <select class="form-control" id="type">
+                        <option value="Single">Single</option>
+                        <option value="Sync">Sync</option>
+                    </select>
+                </div>
+                <div class="col-lg-3">
+                    <label class="form-label" for="comment">Comments:</label>
+                    <input class="form-control" type="text" id="comment" placeholder="comment about the video, mistakes"
+                           value=""/>
+                </div>
+                <div class="col-lg-3">
+                    <label class="form-label" for="athelete_name">Athelete name:</label>
+                    <input class="form-control" type="text" id="athelete_name" placeholder="name of the athelete"
+                           value=""/>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-2">
+                    <label class=form-label" for="action1">Action class:</label>
+                    <select class="form-control" id="action1">
+                        <option value="Forward">Forward</option>
+                        <option value="Back">Back</option>
+                        <option value="Reverse">Reverse</option>
+                        <option value="Inward">Inward</option>
+                    </select>
+                </div>
+
+                <div class="col-lg-2">
+                    <label class="form-label" for="action2"></label>
+                    <select class="form-control" id="action2">
+                        <option value="Dive">Dive</option>
+                        <option value="1som">1som</option>
+                        <option value="15som">1.5som</option>
+                        <option value="2som">2som</option>
+                        <option value="25som">2.5som</option>
+                        <option value="3som">3som</option>
+                        <option value="35som">3.5som</option>
+                        <option value="4som">4som</option>
+                        <option value="45som">4.5som</option>
+                        <option value="5som">5som</option>
+                        <option value="55som">5.5som</option>
+                        <option value="flysom">flysom</option>
+                        <option value="fly15som">fly1.5som</option>
+                        <option value="fly2som">fly2som</option>
+                        <option value="fly25som">fly2.5som</option>
+                    </select>
+                </div>
+                <div class="col-lg-2">
+                    <label class="form-label" for="action3"></label>
+                    <select class="form-control" id="action3">
+                        <option value="NoTwis">NoTwis</option>
+                        <option value="05Twis">0.5Twis</option>
+                        <option value="1Twis">1Twis</option>
+                        <option value="15Twis">1.5Twis</option>
+                        <option value="2Twis">2Twis</option>
+                        <option value="25Twis">2.5Twis</option>
+                        <option value="3Twis">3Twis</option>
+                        <option value="35Twis">3.5Twis</option>
+                        <option value="4Twis">4Twis</option>
+                        <option value="45Twis">4.5Twis</option>
+                    </select>
+                </div>
+                <div class="col-lg-2">
+                    <label class="form-label" for="action4"></label>
+                    <select class="form-control" id="action4">
+                        <option value="NoArms">NoArms</option>
+                        <option value="Arms">Armstand</option>
+                    </select>
+                </div>
+                <div class="col-lg-2">
+                    <label class="form-label" for="difficulty"></label>
+                    <select class="form-control" id="difficulty">
+                        <option value="STR">STR</option>
+                        <option value="PIKE">PIKE</option>
+                        <option value="TUCK">TUCK</option>
+                        <option value="FREE">FREE</option>
+                    </select>
+                </div>
+
+            </div>
+            <div class="row">
+                <div class="col-lg-2">
+                    <label class="form-label" for="cam_view">CameraView:</label>
+                    <select class="form-control" id="cam_view">
+                        <option value="side">side</option>
+                        <option value="front">front</option>
+                        <option value="back">back</option>
+                        <option value="top">top</option>
+                    </select>
+                </div>
+                <div class="col-lg-2">
+                    <label class="form-label" for="cam_dist">CameraDist:</label>
+                    <select class="form-control" id="cam_dist">
+                        <option value="far">far</option>
+                        <option value="med">med</option>
+                        <option value="close">close</option>
+                    </select>
+                </div>
+
+                <div class="col-lg-2">
+                    <label class="form-label" for="trimmed">Trimmed:</label>
+                    <input class="form-control" type="checkbox" id="trimmed" value=false>
+                </div>
+
+                <div class="col-lg-2">
+                    <label class="form-label" for="slow_motion">Slow motion:</label>
+                    <input class="form-control" type="checkbox" id="slow_motion" value=false>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-lg-3">
+                    <label class="form-label" for="start_time">Start Time(s):</label>
+                    <input class="form-control" type="number" id="start_time" maxlength="10" value=""/>
+                </div>
+
+                <div class="col-lg-3">
+                    <label class="form-label" for="stop_time">Stop Time(t):</label>
+                    <input class="form-control" type="number" id="stop_time" maxlength="10" size="14" value=""/>
+                    <input class="form-control" type="submit" id="replay" value="replay">
+                </div>
+
+
+                <div class="col-lg-3">
+                    <label class="form-label" for="info_time">Info Time(j):</label>
+                    <input class="form-control" type="number" id="info_time" maxlength="10" size="15" value=""/>
+                    <input class="form-control" type="submit" id="info" value="Go">
+                </div>
+
+                <div class="col-lg-3">
+                    <label class="form-label" for="score_time">Score Time(k):</label>
+                    <input class="form-control" type="number" id="score_time" maxlength="10" size="15" value=""/>
+                    <input class="form-control" type="submit" id="score" value="Go">
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-3">
+                    <label class="form-label" for="exe_score">Exe score:</label>
+                    <input class="form-control" type="number" id="exe_score" placeholder="executive score" value=""/>
+                </div>
+                <div class="col-lg-3">
+                    <label class="form-label" for="sync_score">Sync score:</label>
+                    <input class="form-control" type="number" id="sync_score" placeholder="sync score" value=""/>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-lg-2"><input class="form-control" type="submit" id="clear" value="Clear"></div>
+                <div class="col-lg-2"><input class="form-control" type="submit" id="Save" value="Append"></div>
+                <div class="col-lg-2"><input class="form-control" type="submit" id="prev" value="Prev"></div>
+                <div class="col-lg-2"><input class="form-control" type="submit" id="next" value="Next"></div>
+                <div class="col-lg-2"><input class="form-control" type="submit" id="change" value="Change"></div>
+                <div class="col-lg-2"><input class="form-control" type="submit" id="delete" value="Delete"></div>
+                <div class="col-lg-2"><input class="form-control" type="submit" id="submitdata" value="Submit"></div>
+            </div>
+            <div class="col-lg-3">
+                <div class="alert alert-success" id="posted" style="display: none; width:40%;"> posted!</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-12">
+        <div class="col-lg-3">
+            <label>Current Time:</label>
+            <label id="time">0</label>
+        </div>
+
+        <div class="col-lg-12" id="tags">
+            <h2>tags</h2>
+            {% for tag in tags %}
+                <span class="badge">{{tag}}</span>
+            {% endfor %}
+        </div>
+        <div class="col-lg-12" id="description">
+            <h2>description</h2>
+            <pre>{{ description }}</pre>
+        </div>
+        <div class="col-lg-12" id="review_btns">
+
+        </div>
+
+    </div>
+
+
+</div>
+</body>
+</html>
